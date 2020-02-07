@@ -13,3 +13,5 @@ adduser username && echo -e "Match User username\nChrootDirectory /home/username
 /bios/mtools/syslinux -i /dev/sdX1; dd conv=notrunc bs=440 count=1 if=/bios/mbr/mbr.bin of=/dev/sdX; parted /dev/sdX set 1 boot on (or use fdisk /dev/sdX and A)
 
 curl --silent "http://ipinfo.io/8.8.8.8"; curl --silent "https://ipvigilante.com/8.8.8.8"
+
+semanage port -a -t ssh_port_t -p tcp 11; semanage port -l | grep ssh; systemctl restart sshd.service;
