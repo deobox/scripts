@@ -1,7 +1,7 @@
 apt install install qemu qemu-kvm libvirt-bin; 
-qemu-img create -f qcow2 android.img 15G; qemu-system-x86_64 -m 2048 -boot d -enable-kvm -smp 3 -net nic -net user -hda android.img;
-qemu-system-x86_64 -m 2048 -kernel /tmp/ipxe.lkrn -append "dhcp && chain https://boot.netboot.xyz"
-qemu-system-x86_64 -m 2048 -boot c -hda /dev/sdc -device e1000,netdev=net0 -netdev tap,id=net0
-qemu-system-x86_64 -m 2048 -boot n -device e1000,netdev=net0 -netdev tap,id=net0
-qemu-system-x86_64 -m 2048 -smp 2 -net nic -net user -drive file=test.hda,index=0,media=disk,format=raw -enable-kvm -boot d -cdrom sysrescuecd.iso
+qemu-img create -f qcow2 disk.img 10G; qemu-system-x86_64 -m 2048 -boot d -enable-kvm -smp 3 -net nic -net user -hda disk.img;
+qemu-system-x86_64 -m 2048 -smp 2 -net nic -net user -drive file=disk.img,index=0,media=disk,format=raw -enable-kvm -boot d -cdrom file.iso;
+wget "https://boot.ipxe.org/ipxe.lkrn" -O "/tmp/ipxe.lkrn"; qemu-system-x86_64 -m 2048 -kernel /tmp/ipxe.lkrn -append "dhcp && chain https://boot.netboot.xyz";
+qemu-system-x86_64 -m 2048 -boot c -hda /dev/sdc -device e1000,netdev=net0 -netdev tap,id=net0;
+qemu-system-x86_64 -m 2048 -boot n -device e1000,netdev=net0 -netdev tap,id=net0;
 qemu-system-x86_64 -boot c -drive file=file.qcow2,if=virtio -m 2048 -netdev type=tap,script=/etc/kvm/qemu-ifup,id=net0 -device virtio-net-pci,netdev=net0;
