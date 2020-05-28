@@ -1,4 +1,13 @@
-apt install install qemu qemu-kvm libvirt-bin; 
+sudo apt install qemu qemu-kvm qemu-utils;
+qemu-system-x86_64 -enable-kvm -m 2048 -smp 2 -soundhw hda -device virtio-net-pci,netdev=net0 -netdev user,id=net0,hostfwd=tcp::2222-:22 -boot d -cdrom file.iso &
+vncviewer 127.0.0.1 &
+
+brctl addbr br0; brctl addif br0 eth0; ip tuntap add vn0 mode tap; brctl addif br0 vn0;
+sudo apt install qemu qemu-kvm qemu-utils; qemu-img create -f qcow2 disk.qcow2 1G;
+sudo qemu-system-x86_64 -enable-kvm -m 3096 -smp 2 -soundhw ac97 -drive file=disk.qcow2,format=qcow2,index=0,media=disk,if=virtio -net nic,model=virtio,macaddr=DE:AD:BE:EF:04:9A -net tap,ifname=vn0 -boot d -cdrom file.iso &
+vncviewer 127.0.0.1 &
+
+sudo apt install qemu qemu-kvm qemu-utils virt-manager; 
 qemu-img create -f qcow2 disk.img 10G; qemu-system-x86_64 -m 2048 -boot d -enable-kvm -smp 3 -net nic -net user -hda disk.img;
 qemu-system-x86_64 -m 2048 -smp 2 -net nic -net user -drive file=disk.img,index=0,media=disk,format=raw -enable-kvm -boot d -cdrom file.iso;
 wget "https://boot.ipxe.org/ipxe.lkrn" -O "/tmp/ipxe.lkrn"; qemu-system-x86_64 -m 2048 -kernel /tmp/ipxe.lkrn -append "dhcp && chain https://boot.netboot.xyz";
