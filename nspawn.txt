@@ -1,0 +1,13 @@
+echo 'kernel.unprivileged_userns_clone=1' > /etc/sysctl.d/nspawn.conf;
+systemctl restart systemd-sysctl.service;
+
+apt-get install systemd-container bridge-utils; 
+debootstrap --include=systemd-container stable /var/lib/machines/debian;
+systemd-nspawn -D /var/lib/machines/debian -U --machine debian; passwd; echo 'pts/0' >> /etc/securetty; echo 'pts/1' >> /etc/securetty; exit; 
+or chroot /var/lib/machines/debian; passwd; exit;
+/etc/init.d/network-manager stop; brctl addbr br0; ip link set br0 up; brctl addif br0 eno1; ifconfig br0 inet 10.0.0.2; ip route add default via 10.0.0.1; 
+systemd-nspawn -b -D /var/lib/machines/debian --machine=debian -n --network-bridge=br0;
+brctl addif br0 ve-debian; ip link set ve-debian up;
+ip link set host0 name eth0; ip addr add 10.0.0.3/24 dev eth0; ip link set dev eth0 up; ip route add default via 10.0.0.1 dev eth0; 
+systemd-nspawn --network-interface=con1 -jbD /var/lib/machines/debian -M debian;
+# machinectl start debian; machinectl stop debian; machinectl status debian; machinectl login debian; machinectl list; machinectl list-images;
