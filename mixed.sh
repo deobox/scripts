@@ -4,11 +4,15 @@ addbr br0; addif br0 eth0; addif br0 eth1; ip link set br0 up;
 
 nmap -T4 -v -A -sV -sS -Pn -O -sC 127.0.0.1;
 
+apt install dnsmasq; nmcli dev wifi hotspot ifname wless0 ssid "WiFiName" password "WiFiPass";
+
 echo dd if=/dev/sda of=file.img bs=$(($(blockdev --getbsz /dev/sda)*2048)) conv=sync,noerror status=progress;
 
 curl --silent "http://ipinfo.io/8.8.8.8" |  python3 -c "import sys, json; print(json.load(sys.stdin)['region'])";
 
 sed -rne '/10\/Oct\/2020/,/09\/Nov\/2020/ p' file.log;
+
+tar --selinux --acls --xattrs -czvf file.tgz file-dir;
 
 adduser username && echo -e "Match User username\nChrootDirectory /home/username\nForceCommand internal-sftp -d username\nPermitTTY no\nPermitEmptyPasswords no\nX11Forwarding no" >> /etc/ssh/sshd_config && mkdir -p /home/username/username; chown root.root /home/username; chown username.username /home/username/username; chmod 0750 /home/username/username; service sshd restart;
 
