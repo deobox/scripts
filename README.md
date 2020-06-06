@@ -1,1 +1,1 @@
-# Short Helpful Scripts and Tips
+# Short Scripts and Tips

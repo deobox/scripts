@@ -1,6 +1,6 @@
 alias arial='aria2c --all-proxy="$http_proxy" --http-proxy="$http_proxy" --https-proxy="$http_proxy" -d "$HOME/Downloads" --max-overall-upload-limit=8K --max-upload-limit=8K --max-download-limit=900K --no-conf=true --disable-ipv6=true --enable-dht6=false --summary-interval=0 --bt-request-peer-speed-limit=500K --bt-stop-timeout=180 --bt-tracker-connect-timeout=30 --bt-tracker-timeout=30 --bt-enable-lpd=true --bt-external-ip=127.0.0.1 --enable-peer-exchange=true --always-resume=true --human-readable=true --enable-dht --dht-listen-port=6886 --seed-time=0 --seed-ratio=1.0';
 
-addbr br0; addif br0 eth0; addif br0 eth1; ip link set br0 up;
+brctl addbr br0; ip addr add 10.0.0.2/24 dev br0; ip link set dev br0 up; brctl addif eth0; ip tuntap add vn0 mode tap; brctl addif br0 vn0;
 
 nmap -T4 -v -A -sV -sS -Pn -O -sC 127.0.0.1;
 

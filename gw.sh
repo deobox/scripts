@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 echo=$(which echo); iptables=$(which iptables); systemctl=$(which systemctl);
 
 function getip() { mynet='10.0.0.'; $echo -n "-> Enter IP ${mynet}"; read myip; 

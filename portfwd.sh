@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-function validateip() { if [[ ${1} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "-> ip ${1} accepted"; else echo "-> ip ${1} is invalid ip"; exit 1; fi }
+function validateip() { if [[ ${1} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "-> ip ${1} accepted"; else echo "-> ip ${1} is invalid"; exit 1; fi }
 function validateport() { if (( ${1} >= 1 &&  ${1} <= 65535)); then  echo "-> port ${1} accepted"; else echo "-> ${1} is invalid port"; exit 1; fi }
 
 read -e -p "-> Enter Local IP: " -i "$(ip route get 8.8.8.8 |  awk '/src/{print $7}')" ipmy; validateip "${ipmy}";
