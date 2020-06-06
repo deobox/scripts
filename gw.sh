@@ -1,22 +1,35 @@
 #!/usr/bin/env bash
-echo=$(which echo); iptables=$(which iptables); systemctl=$(which systemctl);
 
-function getip() { mynet='10.0.0.'; $echo -n "-> Enter IP ${mynet}"; read myip; 
-if [ "${myip}" == "" ]; then echo "-> Cancelled" && exit 0; fi; myip=${mynet}${myip}; }
-function fwstart() {
- echo "1" > /proc/sys/net/ipv4/ip_forward;
- $systemctl reload iptables.service;
- $iptables -I FORWARD 1 -m state --state ESTABLISHED,RELATED -j ACCEPT;
+function gwstart() {
+ echo "-> Starting Gateway";
+ echo "1" > /proc/sys/net/ipv4/ip_forward; sysctl -w net.ipv4.ip_forward=1;
+ if [ -f "iptables.conf" ]; then mv -f "iptables.conf" "iptables.conf.old"; fi;
+ iptables-save > iptables.conf;
+ read -e -p "-> Enter Interface: " -i "$(ip route get 8.8.8.8 | awk '/src/{print $5}')" interface;
+ if [ -z "${interface}" ]; then echo "-> Please set local interface"; exit; fi;
+ iptables -C FORWARD -i ${interface} -j ACCEPT &>/dev/null || iptables -A FORWARD -i ${interface} -j ACCEPT;
+ iptables -C FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT &>/dev/null || iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT;
+ iptables -t nat -C POSTROUTING -o ${interface} -j MASQUERADE || iptables -t nat -A POSTROUTING -o ${interface} -j MASQUERADE;
+ echo "-> done";
 }
-function openip() { $iptables -t nat -A POSTROUTING -s ${myip}/32 -p ALL -j SNAT --to-source 10.0.0.1; $iptables -I FORWARD 1 -s ${myip}/32 -p ALL -j ACCEPT; }
-function fwstop() { echo "0" > /proc/sys/net/ipv4/ip_forward; $systemctl reload iptables.service; }
-function fwstatus() { $echo "-> Listing firewall rules"; $iptables -vnL -t nat --line-numbers; $iptables -vnL FORWARD --line-numbers; }
 
-case "$1" in
-start) fwstart; fwstatus; ;;
-stop) fwstop; fwstatus; ;;
-status) fwstatus;;
-add) getip; openip; fwstatus; ;;
-*) $echo "-> Usage: $0 start/stop/status/add"; ;;
+function gwstop() {
+ echo "-> Stopping Gateway";
+ echo "0" > /proc/sys/net/ipv4/ip_forward; sysctl -w net.ipv4.ip_forward=0;
+ if [ -f "iptables.conf" ]; then iptables-restore < iptables.conf; fi;
+ echo "-> done";
+}
+
+function gwstatus() {
+ echo "-> Listing Firewall Rules";
+ iptables -vnL -t nat --line-numbers; iptables -vnL FORWARD --line-numbers;
+ echo "-> done";
+}
+
+case "${1}" in
+start) gwstart; gwstatus; ;;
+stop) gwstop; gwstatus; ;;
+status) gwstatus;;
+*) echo "-> Usage: $0 start/stop/status"; ;;
 esac
 
