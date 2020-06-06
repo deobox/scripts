@@ -22,3 +22,8 @@ syslinux -i /dev/sdX1; dd conv=notrunc bs=440 count=1 if=/bios/mbr/mbr.bin of=/d
 curl --silent "http://ipinfo.io/8.8.8.8"; curl --silent "https://ipvigilante.com/8.8.8.8"
 
 semanage port -a -t ssh_port_t -p tcp 11; semanage port -l | grep ssh; systemctl restart sshd.service;
+
+apt install lxde-core pulseaudio pavucontrol lxterminal dbus dbus-x11 dbus-user-session xserver-xorg-core xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all x11-xserver-utils x11-xkb-utils x11-utils xinit;
+apt install lxqt-core lxterminal pulseaudio pavucontrol-qt dbus dbus-x11 dbus-user-session xserver-xorg-core adwaita-icon-theme gnome-icon-theme-nuovo openbox xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all x11-xserver-utils x11-xkb-utils x11-utils xinit;
+apt install xfce4 xfce4-terminal pulseaudio pavucontrol dbus dbus-x11 dbus-user-session xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all x11-xserver-utils x11-xkb-utils x11-utils xinit;
+apt install icewm pulseaudio pavucontrol xterm dbus dbus-x11 dbus-user-session xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all x11-xserver-utils x11-xkb-utils x11-utils xinit;
