@@ -6,6 +6,7 @@ if [ "${1}" == "init" ]; then
  exit 0;
 fi;
 if [ "${1}" == "clear" ]; then iptables -F AUTOBAN; iptables -A AUTOBAN -j RETURN; exit 0; fi;
+if [ "${1}" == "list" ]; then iptables -vnL AUTOBAN --line-numbers; exit 0; fi;
 
 wfile='/var/log/maillog';
 wlines='500';
@@ -17,7 +18,8 @@ function checkiptables () { if [ "$(iptables -vnL AUTOBAN | grep -c $1)" == "0" 
 function addiptables () { iptables -C AUTOBAN -s "${1}/32" -j DROP &>/dev/null || iptables -I AUTOBAN 1 -s "${1}/32" -j DROP; }
 function dowork () { validateip "${1}" && return 0; checkiptables "${1}" || return 0; logger -p mail.info -t autoban "Filtering ip address ${1}"; addiptables "${1}"; }
 
-for wips in $(tail -n "${wlines}" "${wfile}" | grep 'SASL LOGIN authentication failed:' | sed -e 's/\(^.*\[\)\(.*\)\(\].*$\)/\2/' | sort | uniq | grep -v "${wexclude}"); do dowork "${wips}"; done;
-for wips in $(tail -n "${wlines}" "${wfile}" | grep '(auth failed,' | sed -e 's/\(^.*rip=\)\(.*\)\(, lip=.*$\)/\2/' | sort | uniq | grep -v "${wexclude}"); do dowork "${wips}"; done;
-for wips in $(tail -n "${wlines}" "${wfile}" | grep 'no auth attempts in' | sed -e 's/\(^.*rip=\)\(.*\)\(, lip=.*$\)/\2/' | sort | uniq | grep -v "${wexclude}"); do dowork "${wips}"; done;
+for wips in $(tail -n "${wlines}" "${wfile}" | grep 'SASL LOGIN authentication failed:' | sed -e 's/\(^.*\[\)\(.*\)\(\].*$\)/\2/' | sort -u | grep -v "${wexclude}"); do dowork "${wips}"; done;
+for wips in $(tail -n "${wlines}" "${wfile}" | grep '(auth failed,' | sed -e 's/\(^.*rip=\)\(.*\)\(, lip=.*$\)/\2/' | sort -u | grep -v "${wexclude}"); do dowork "${wips}"; done;
+for wips in $(tail -n "${wlines}" "${wfile}" | grep 'no auth attempts in' | sed -e 's/\(^.*rip=\)\(.*\)\(, lip=.*$\)/\2/' | sort -u | grep -v "${wexclude}"); do dowork "${wips}"; done;
 
+if [ "${1}" == "add" ] && [ ! -z "${2}" ]; then dowork "${2}"; fi;
