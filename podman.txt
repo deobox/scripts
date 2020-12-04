@@ -1,0 +1,22 @@
+yum install podman slirp4netns;
+echo "user.max_user_namespaces=28633" > /etc/sysctl.d/userns.conf;
+sysctl -p /etc/sysctl.d/userns.conf;
+
+podman login registry.redhat.io;
+podman pull registry.access.redhat.com/ubi8/ubi-init:latest;
+podman pull registry.access.redhat.com/ubi8/ubi:latest;
+podman pull registry.access.redhat.com/ubi8/ubi-minimal:latest;
+podman logout registry.redhat.io;
+
+podman run -ti --name test --hostname test -p 22:22/tcp registry.access.redhat.com/ubi8/ubi-init:latest /bin/bash;
+podman run -ti --name test --hostname test --network host registry.access.redhat.com/ubi8/ubi-init:latest;
+podman run --read-only --read-only-tmpfs=false --tmpfs /run -it --name test --hostname test -p 22:22/tcp localhost/local/test:latest /bin/bash;
+
+podman pull fedora:latest; podman run -it fedora /bin/bash; 
+podman pull centos:latest; podman run -it centos:latest /bin/bash;
+
+# detach: ctrl+p ctrl+q | delete: podman rm -a  | list: podman container ls -a | connect: podman exec -it test /bin/bash
+# build: touch Dockerfile; podman build -t test .; buildah bud -t local/test . ; podman run -d -p 80:80/tcp local/test;
+# update: podman ps; podman commit d200659f91a0 local/test:latest; podman images;  podman containers;
+# execute: podman exec -d --user root test /script.sh;
+# start: @reboot /usr/bin/podman start test && /usr/bin/podman exec -d --user root test /script.sh;

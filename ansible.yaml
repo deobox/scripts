@@ -1,0 +1,56 @@
+---
+  - name: Ansible
+    hosts: localhost
+    become: yes
+    become_user: root
+    tasks:
+
+      - name: apache setup
+        apt:
+          name: apache2
+          state: latest
+
+      - name: apache running
+        service:
+          name: apache2
+          state: started
+
+      - name: Run Uname 
+        shell:
+         "uname -a"
+        register: unamea
+        tags: unamea
+      - debug: msg="{{unamea.stdout}}"
+
+      - name: Updating System
+        shell:
+         "apt update; apt upgrade;"
+        register: updates
+        tags: updates
+      - debug: msg="{{updates.stdout}}"
+
+      - name: Networking
+        shell:
+         "ip a show; ip r show;"
+        register: nets
+        tags: nets
+      - debug: msg="{{nets.stdout}}"
+
+      - name: Copy File
+        copy:
+         src: index.html
+         dest: /var/www/html/index.html
+         owner: root
+         group: root
+         mode: '0644'
+         
+      - name:  Create File
+        copy:
+         content: It is working
+         dest: /var/www/html/index.htm
+
+### ansible-playbook --syntax-check ansible.yaml
+### ansible localhost -m ansible.builtin.setup
+### ansible localhost -m ansible.builtin.copy -a "src=index.html dest=/var/www/html/index.html mode=644 owner=root group=root"
+### ansible localhost -a "ip a show"
+
