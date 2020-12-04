@@ -8,7 +8,7 @@ nmap -sn 10.0.0.0/24; nmap -T4 -v -A -sV -sS -Pn -O -sC 127.0.0.1;
 apt install dnsmasq; nmcli dev wifi hotspot ifname wless0 ssid "WiFiName" password "WiFiPass";
 nmcli r wifi on && nmcli d wifi connect "WiFiName" password "WiFiPass";
 
-certbot certonly --manual -d eu.dist.co.uk; certbot certonly --manual -d mydomain.com;
+certbot certonly --manual --register-unsafely-without-email -d mydomain.com;
 
 dd if=/dev/sda of=file.img bs=$(($(blockdev --getbsz /dev/sda)*2048)) conv=sync,noerror status=progress;
 
