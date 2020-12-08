@@ -1,3 +1,4 @@
+# rootless daemonless private network container
 yum install podman slirp4netns;
 echo "user.max_user_namespaces=28633" > /etc/sysctl.d/userns.conf;
 sysctl -p /etc/sysctl.d/userns.conf;
@@ -8,9 +9,9 @@ podman pull registry.access.redhat.com/ubi8/ubi:latest;
 podman pull registry.access.redhat.com/ubi8/ubi-minimal:latest;
 podman logout registry.redhat.io;
 
-podman run -ti --name test --hostname test -p 22:22/tcp registry.access.redhat.com/ubi8/ubi-init:latest /bin/bash;
+podman run -ti --name test --hostname test -p 2222:2222/tcp registry.access.redhat.com/ubi8/ubi-init:latest /bin/bash;
 podman run -ti --name test --hostname test --network host registry.access.redhat.com/ubi8/ubi-init:latest;
-podman run --read-only --read-only-tmpfs=false --tmpfs /run -it --name test --hostname test -p 22:22/tcp localhost/local/test:latest /bin/bash;
+podman run --read-only --read-only-tmpfs=false --tmpfs /run -it --name test --hostname test -p 2222:2222/tcp localhost/local/test:latest /bin/bash;
 
 podman pull fedora:latest; podman run -it fedora /bin/bash; 
 podman pull centos:latest; podman run -it centos:latest /bin/bash;
