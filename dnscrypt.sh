@@ -30,3 +30,5 @@ systemd-resolve --interface $(ip route list default | awk '{print $5}') --revert
 if [ -f '/etc/resolv.conf' ]; then mv -f '/etc/resolv.conf' '/etc/resolv.conf.org'; fi;
 if [ -f '/run/systemd/resolve/stub-resolv.conf' ]; then ln -sf '/run/systemd/resolve/stub-resolv.conf' '/etc/resolv.conf'; fi;
 systemctl restart systemd-resolved.service;
+systemd-resolve --interface $(ip route list default | awk '{print $5}') --set-dns 127.0.0.1 --set-domain domain.lan --set-llmnr=no;
+resolvectl default-route $(ip route list default | awk '{print $5}') no;

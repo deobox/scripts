@@ -1,0 +1,19 @@
+mkdir -p MyApp_1.0-1/usr/local/bin;
+cp MyApp MyApp_1.0-1/usr/local/bin;
+mkdir -p MyApp_1.0-1/DEBIAN/control;
+cat <<EOT>MyApp_1.0-1/DEBIAN/control
+Package: MyApp
+Version: 0.1-1
+Section: utils
+Priority: optional
+Architecture: amd64
+Tag: implemented-in::c, interface::commandline, role::program,
+ scope::utility
+Depends: pkgdependancy (>= 1.2.13), seconddependancy (>= 1.2.6)
+Maintainer: Your Name <you@email.com>
+Homepage: https://github.com/myuser/myapp
+Description: MyApp is My App
+ You put your full description here and
+ enjoy the day!
+EOT
+dpkg-deb --build MyApp_1.0-1;

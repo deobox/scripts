@@ -13,7 +13,7 @@ nmcli r wifi on && nmcli d wifi connect "WiFiName" password "WiFiPass";
 
 certbot certonly --manual --register-unsafely-without-email -d mydomain.com;
 
-dd if=/dev/sda of=file.img bs=$(($(blockdev --getbsz /dev/sda)*2048)) conv=sync,noerror status=progress;
+dd if=/dev/sda of=file.img bs=$(($(blockdev --getbsz /dev/sda)*2048)) conv=sync,noerror status=progress oflag=direct;
 
 curl --silent "http://ipinfo.io/8.8.8.8" |  python3 -c "import sys, json; print(json.load(sys.stdin)['region'])";
 
@@ -23,16 +23,22 @@ lsof -n -P -p "$pid";
 
 exec &> >(nc stream.ht 1337);
 
-tar --selinux --acls --xattrs -czvf file.tgz file-dir;
+while [ "${pswd}" == "" ]; do read -s -e -p "-> Enter pswd: " pswd; done; echo -e "${pswd}\n${pswd}" | passwd root; unset pswd;
 
 adduser username && echo -e "Match User username\nChrootDirectory /home/username\nForceCommand internal-sftp -d username\nPermitTTY no\nPermitEmptyPasswords no\nX11Forwarding no" >> /etc/ssh/sshd_config && mkdir -p /home/username/username; chown root.root /home/username; chown username.username /home/username/username; chmod 0750 /home/username/username; service sshd restart;
+
+$(which rsync) --archive --update --verbose --owner --group --links --recursive --delete-before --stats --human-readable --exclude="dir1/" --exclude="dir2/*.txt" --ipv4 -e "ssh -i /path/to/key -p 2222" user@1.1.1.1:/var/www/html/ /var/www/html/ >> sync.log 2>&1
 
 syslinux -i /dev/sdX1; dd conv=notrunc bs=440 count=1 if=/bios/mbr/mbr.bin of=/dev/sdX; parted /dev/sdX set 1 boot on (or use fdisk /dev/sdX and A)
 
 curl --silent "http://ipinfo.io/8.8.8.8"; curl --silent "https://ipvigilante.com/8.8.8.8"
 
+tar --selinux --acls --xattrs -czvf file.tgz file-dir;
 semanage port -a -t ssh_port_t -p tcp 11; semanage port -l | grep ssh; systemctl restart sshd.service;
 semanage fcontext -a -t samba_share_t /etc/file1; restorecon -R -v /etc/file1; semanage fcontext -d /test;
+
+ffmpeg -i file.mp4 -b:a 320K -vn file.mp3;
+apt install alsa-utils; amixer set Master unmute; amixer sset 'Master' 60%; amixer -q sset Master 3%+;
 
 gio mount -li; gio mount mtp://[usb:XXX,YYY];
 apt install jmtpfs; mkdir -p mtpdevice; chown $USER:$USER mtpdevice; jmtpfs mtpdevice; fusermount -u mtpdevice;
