@@ -1,35 +1,39 @@
 #!/usr/bin/env bash
 
-#apt install dnscrypt-proxy;
-#printf "nameserver 127.0.2.1\n#nameserver 1.0.0.1\n#nameserver 8.8.4.4\n#nameserver 8.8.8.8\n" > /etc/resolv.conf;
+#apt install -y -f dnscrypt-proxy;
+#if [ -f '/etc/resolv.conf' ]; then mv -f '/etc/resolv.conf' '/etc/resolv.conf.org' >/dev/null; fi;
+#echo -e "nameserver 127.0.2.1\n#nameserver 8.8.4.4" > /etc/resolv.conf;
 
-if [ -f '/etc/resolv.conf' ]; then mv -f '/etc/resolv.conf' '/etc/resolv.conf.org'; fi;
-if [ -f '/run/systemd/resolve/stub-resolv.conf' ]; then ln -sf '/run/systemd/resolve/stub-resolv.conf' '/etc/resolv.conf'; fi;
-#cat <<EOT>/etc/resolv.conf
-#nameserver 127.0.0.53
-#options edns0
-#EOT
-
-cat <<EOT>/etc/systemd/resolved.conf
+cat > /etc/systemd/resolved.conf << _EOF_
 [Resolve]
-DNS=176.103.130.131 8.8.4.4 1.0.0.1 149.112.112.112
-FallbackDNS=176.103.130.130 8.8.8.8 1.1.1.1 9.9.9.9
+DNS=1.0.0.1 176.103.130.131 8.8.4.4 149.112.112.112
+FallbackDNS=1.1.1.1 176.103.130.130 8.8.8.8 9.9.9.9
 Domains=~
 LLMNR=no
 MulticastDNS=no
-DNSSEC=true
-DNSOverTLS=opportunistic
+#DNSSEC=true
+DNSSEC=false
+#DNSOverTLS=opportunistic
+DNSOverTLS=yes
 Cache=no
 DNSStubListener=yes
 ReadEtcHosts=yes
-EOT
+_EOF_
 
-sed -i 's/ dns/ resolve [!UNAVAIL=return] dns/g' /etc/nsswitch.conf;
-systemctl daemon-reload; systemctl start systemd-resolved.service;
-if [ -f '/etc/resolv.conf' ]; then mv -f '/etc/resolv.conf' '/etc/resolv.conf.org'; fi;
-if [ -f '/run/systemd/resolve/stub-resolv.conf' ]; then ln -sf '/run/systemd/resolve/stub-resolv.conf' '/etc/resolv.conf'; fi;
-systemctl restart systemd-resolved.service;
+systemctl start systemd-resolved.service;
+if [ -f '/etc/resolv.conf' ]; then mv -f '/etc/resolv.conf' '/etc/resolv.conf.org' >/dev/null; fi;
+#echo -e "nameserver 127.0.0.53\noptions edns0 trust-ad\nsearch ." > '/etc/resolv.conf';
+if [ -f '/run/systemd/resolve/stub-resolv.conf' ]; then
+ ln -sf '/run/systemd/resolve/stub-resolv.conf' '/etc/resolv.conf';
+fi;
 
-systemd-resolve --interface $(ip route list default | awk '{print $5}') --revert;
-systemd-resolve --interface $(ip route list default | awk '{print $5}') --set-dns 127.0.0.1 --set-domain domain.lan --set-llmnr=no;
-resolvectl default-route $(ip route list default | awk '{print $5}') no;
+sed -i 's|files dns|files resolve [!UNAVAIL=return] dns|g' /etc/nsswitch.conf; sync;
+systemctl daemon-reload; systemctl restart systemd-resolved.service;
+
+for iface in /sys/class/net/*; do
+ if [ "${iface##*/}" = "lo"  ]; then continue; fi
+ resolvectl revert ${iface##*/};
+ resolvectl default-route ${iface##*/} no;
+ resolvectl llmnr ${iface##*/} off;
+ resolvectl dns ${iface##*/} 127.0.0.1;
+done;
