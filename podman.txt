@@ -1,4 +1,5 @@
 # rootless daemonless private network container
+# rootless podman enable autostart: loginctl enable-linger username
 yum install podman slirp4netns;
 echo "user.max_user_namespaces=28633" > /etc/sysctl.d/userns.conf;
 sysctl -p /etc/sysctl.d/userns.conf;
