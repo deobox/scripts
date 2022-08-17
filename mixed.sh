@@ -14,6 +14,7 @@ youtube-dl {-F -f 251} "file.mp4"; ffprobe "file.mp4";
 ffmpeg -i file.mp4 -b:a 320K -vn file.mp3; ffmpeg -i file.flac -ab 320k file.mp3;
 for file in *.webm; do ffmpeg -i "${file}" -b:a 160K -vn "${file%.*}".mp3; done;
 ffmpeg -i "concat:file1.mp3|file2.mp3" -acodec copy output.mp3
+sed '1,10s|#!/bin/bash|& +x|' backup.sh;
 
 ffmpeg -f x11grab -s 1600x900 -i :0.0 -framerate 25 -preset ultrafast -f alsa -ac 2 -i hw:0 out.mp4;
 
