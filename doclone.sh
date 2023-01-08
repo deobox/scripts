@@ -17,6 +17,7 @@ doappscheck() {
 
 dopkginstall() {
 [[ ! -f '/etc/debian_version' ]] && { dosay 'Sorry only debian based distributions are supported for now'; exit 1; }
+if [ -n "$(command -v apt)" ]; then dosay 'Updating system'; apt update; fi;
  for pkg in 'gzip' 'coreutils' 'util-linux' 'gdisk' 'fdisk' 'grep' 'partclone' 'partimage' 'fsarchiver' 'ntfs-3g'; do
   dpkg -s "${pkg}" &>>/dev/null || { 
    dosay "Warning: ${pkg} is not installed";  
@@ -35,58 +36,64 @@ done;
 sync; if [ -f "${sysfile}" ]; then cat "${sysfile}" >> "${0}.log"; fi;
 }
 
+dodisktabset() {
+ctapname[1]="dd"; ctapfile[1]="ddmbr";
+ctapsave[1]="dd if=${diskname} of=${disktable}.${ctapfile[1]} bs=512 count=1 conv=sync,noerror";
+ctaprest[1]="dd if=${disktable}.${ctapfile[1]} of=${diskname} bs=512 count=1";
+
+ctapname[2]="dd"; ctapfile[2]="ddptb";
+ctapsave[2]="dd if=${diskname} of=${disktable}.${ctapfile[2]} bs=512 count=63 conv=sync,noerror";
+ctaprest[2]="dd if=${disktable}.${ctapfile[2]} of=${diskname} bs=512 count=63";
+
+ctapname[3]="sgdisk"; ctapfile[3]="sgdisk";
+ctapsave[3]="sgdisk --backup=${disktable}.${ctapfile[3]} ${diskname}";
+ctaprest[3]="sgdisk --load-backup=${disktable}.${ctapfile[3]} ${diskname}";
+
+ctaprestcount=3;
+}
+
 dodisktab() {
 #if [ "${#appin}" -ge 11 ]; then diskname=${appin::-2}; else diskname=${appin::-1}; fi;
 if [[ "${appin}" == *"nvme"* ]]; then diskname=${appin::-2}; else diskname=${appin::-1}; fi;
+
+while [ "$(blkid -s PTTYPE -o value "${diskname}")" == "" ]; do
+ dosay "Error: ${diskname} is not a device";
+ diskname=$(doget "Input drive containing ${appin}:" "${diskname}"); 
+done;
+
 dosay "Info: ${appin} is located on ${diskname}";
 diskpartype="$(blkid -s PTTYPE -o value "${diskname}")";
 disktable="${diskname#/}"; disktable="${disktable//\//${fidel}}${fidel}disk${fidel}table-${diskpartype}";
 
 dosay "Saving ${diskpartype} partition table for ${diskname}"; 
-dobak "# ${diskname} generated $(date '+%F %H:%M:%S')"; 
+dobak "# Restoring ${diskname} generated $(date '+%F %H:%M:%S')"; 
 
-if [ ! -f "${disktable}.ddmbr" ]; then
- if dd if="${diskname}" of="${disktable}.ddmbr" bs=512 count=1 conv=sync,noerror &> /dev/null;
- then dosay "Restore: dd if=${disktable}.ddmbr of=${diskname} bs=512 count=1";  
- dobak "dd if=${disktable}.ddmbr of=${diskname} bs=512 count=1";
- else dosay "Error: dd failed with code $?";
+dodisktabset;
+for (( c=1; c <= ctaprestcount; c++ )); do 
+if [ -f "${disktable}.${ctapfile[$c]}" ]; then continue; fi;
+if [[ -z $(command -v "${ctapname[$c]}") ]]; then dosay "Error: ${ctapname[$c]} is missing!"; continue; fi;
+dosay "Running: ${ctapsave[$c]}";
+if ${ctapsave[c]} &> /dev/null;
+ then dosay "Restore: ${ctaprest[c]}"; dobak "${ctaprest[c]}";
+ else dosay "Error: ${ctapname[$c]} failed with code $?";
  fi
-fi
+done
 
-if [ ! -f "${disktable}.ddptb" ]; then
- if dd if="${diskname}" of="${disktable}.ddptb" bs=512 count=1 conv=sync,noerror &> /dev/null;
- then dosay "Restore: dd if=${disktable}.ddptb of=${diskname} bs=512 count=63";
- dobak "dd if=${disktable}.ddptb of=${diskname} bs=512 count=63";
- else dosay "Error: dd failed with code $?";
- fi
-fi
-
-if [ ! -f "${disktable}.sgdisk" ]; then
- if sgdisk --backup="${disktable}.sgdisk" "${diskname}" &> /dev/null;
- then dosay "Restore: sgdisk --load-backup=${disktable}.sgdisk ${diskname}";
- dobak "sgdisk --load-backup=${disktable}.sgdisk ${diskname}";
- else dosay "Error: sgdisk failed with code $?";
- fi
-fi
-
-if [ ! -f "${disktable}.sfdisk" ]; then
+if [ ! -f "${disktable}.sfdisk" ] && [[ -n $(command -v sfdisk) ]]; then
+dosay "Running: sfdisk -d ${diskname} > ${disktable}.sfdisk";
  if sfdisk -d "${diskname}" > "${disktable}.sfdisk";
- then dosay "Restore: sfdisk ${diskname} < ${disktable}.sfdisk";
- dobak "sfdisk ${diskname} < ${disktable}.sfdisk" ;
+ then dosay "Restore: sfdisk ${diskname} < ${disktable}.sfdisk"; dobak "sfdisk ${diskname} < ${disktable}.sfdisk";
  else dosay "Error: sfdisk failed with code $?";
  fi
 fi
 
 sync;
 if [ -n "$(command -v smartctl)" ]; then 
-dosay "Checking ${diskname} device state"; smartctl -a "${diskname}" | grep -i "result\|sector\|uncorrect"; 
+ dosay "Checking ${diskname} device state"; smartctl -a "${diskname}" | grep -i "result\|sector\|uncorrect"; 
 fi
 }
 
-dogenerate() {
-if [ -f "${0}.log" ]; then dosay "Printing restore commands from log file"; grep 'Restore:' "${0}.log"; fi;
-if [ -f "${0}.bak" ]; then dosay "Printing restore commands from bak file"; cat "${0}.bak"; fi;
-}
+dogenerate() { if [ -f "${0}.bak" ]; then dosay "Printing restore commands from bak file"; cat "${0}.bak"; fi; }
 
 docmd() {
 echo "[ $(date '+%T') ] Info: Here are generated commands anyway";
@@ -96,8 +103,7 @@ dosetapps; for (( c=1; c <= cappscount; c++ )); do echo; echo "Save: ${cappsave[
 
 local diskname; if [[ "${appin}" == *"nvme"* ]]; then diskname=${appin::-2}; else diskname=${appin::-1}; fi;
 local disktable; disktable="${diskname#/}"; disktable="${disktable//\//${fidel}}${fidel}disk${fidel}table-ddmbr";
-echo; echo "Save: dd if=${diskname} of=${disktable}.ddmbr bs=512 count=1 conv=sync,noerror"; 
-echo "Restore: dd if=${disktable}.ddmbr of=${diskname} bs=512 count=1";
+dodisktabset; for (( c=1; c <= ctaprestcount; c++ )); do echo; echo "Save: ${ctapsave[$c]}"; echo "Restore: ${ctaprest[$c]}"; done;
 }
 
 dosetappsio() {
@@ -163,12 +169,11 @@ cappscount=6;
 
 dorun() {
 dodisktab; local runapp;
-dosay "Saving disk partition table for ${appin}"; 
-dobak "# ${appin} generated $(date '+%F %H:%M:%S')"; 
+dobak "# Restoring ${appin} generated $(date '+%F %H:%M:%S')"; 
 
 if [ -n "$(command -v blockdev)" ]; then 
    if [ "$(blockdev --getsize64 "${appin}")" -lt "1500000000" ]; then
-		local runapp; doask "Run all apps for the small ${appin} [Y/N]:" 'YN' 'Y' && runapps=true;
+    local runapp; doask "Run all apps for the small ${appin} [Y/N]:" 'YN' 'Y' && runapps=true;
    fi
 fi
 
@@ -179,10 +184,10 @@ for (( c=1; c <= cappscount; c++ )); do
   { cappexe=$(echo "${cappsave[$c]}" | cut -d ' ' -f 1);
    if [[ -z $(command -v "${cappexe}") ]]; then dosay "Error: ${cappexe} is missing!"; continue; unset runapp; fi;
    dosay "Running: ${cappsave[$c]}"; 
-   	 if ${cappsave[$c]};
-	 then dosay "Restore: ${capprest[$c]}"; dobak "${capprest[$c]}";
-	 else dosay "Error: ${cappname[$c]} failed with code $?";
-	 fi
+    if ${cappsave[$c]};
+     then dosay "Restore: ${capprest[$c]}"; dobak "${capprest[$c]}";
+     else dosay "Error: ${cappname[$c]} failed with code $?";
+    fi
    sync; unset runapp;
   }
   fi
