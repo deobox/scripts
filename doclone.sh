@@ -6,13 +6,13 @@ doask() { local doaskres; doaskres=$(doget "${1}" "${2}"); if [ "${doaskres}" ==
 dobak() { if [ ! -f "$0.bak" ]; then touch "$0.bak"; fi; if [ "$(grep -c "${1}" "$0.bak")" == "0" ]; then echo "${1}" >> "$0.bak"; fi; }
 
 doappscheck() {
- dosay "System check started"; local app; local askpkgsinstall;
+dosay "System check started"; local app; local askpkgsinstall;
  for app in 'echo' 'cat' 'cp' 'grep' 'cut' 'head' 'fdisk' 'sfdisk' 'sgdisk' 'date' 'dd' \
  'partclone.ntfs' 'ntfsclone' 'partimage' 'fsarchiver' 'du' 'gzip' 'blkid' 'lsblk'; do
   if [ -z "$(command -v ${app})" ]; then dosay "Warning: missing ${app}"; askpkgsinstall=true; fi; 
  done;
- if [[ "${askpkgsinstall}" == "true" ]]; then doask 'Run initial packages check [Y/N]:' 'YN' 'Y' &&  { dopkginstall; } fi;
- dosay "System check completed";
+if [[ "${askpkgsinstall}" == "true" ]]; then doask 'Run initial packages check [Y/N]:' 'YN' 'Y' &&  { dopkginstall; } fi;
+dosay "System check completed";
 }
 
 dopkginstall() {
@@ -70,10 +70,10 @@ dobak "# Restoring ${diskname} generated $(date '+%F %H:%M:%S')";
 
 dodisktabset;
 for (( c=1; c <= ctaprestcount; c++ )); do 
-if [ -f "${disktable}.${ctapfile[$c]}" ]; then continue; fi;
-if [[ -z $(command -v "${ctapname[$c]}") ]]; then dosay "Error: ${ctapname[$c]} is missing!"; continue; fi;
-dosay "Running: ${ctapsave[$c]}";
-if ${ctapsave[c]} &> /dev/null;
+ if [ -f "${disktable}.${ctapfile[$c]}" ]; then continue; fi;
+ if [[ -z $(command -v "${ctapname[$c]}") ]]; then dosay "Error: ${ctapname[$c]} is missing!"; continue; fi;
+ dosay "Running: ${ctapsave[$c]}";
+ if ${ctapsave[c]} &> /dev/null;
  then dosay "Restore: ${ctaprest[c]}"; dobak "${ctaprest[c]}";
  else dosay "Error: ${ctapname[$c]} failed with code $?";
  fi
@@ -137,7 +137,7 @@ dosetapps() {
 cappname[1]="partclone.dd";
 cappfile[1]="partclonedd";
 cappsave[1]="partclone.dd -L log-${appout}${cappfile[1]}${fiend} -C -s ${appin} -O ${appout}${cappfile[1]}${fiend}";
-capprest[1]="partclone.dd -r -s ${appout}${cappfile[1]}${fiend} -O ${appin}";
+capprest[1]="partclone.dd -C -s ${appout}${cappfile[1]}${fiend} -O ${appin}";
 
 cappname[2]="partclone";
 cappfile[2]="partclone";
@@ -147,12 +147,12 @@ capprest[2]="partclone.${partype} -C -r -s ${appout}${cappfile[2]}${fiend} -O ${
 cappname[3]="ntfsclone";
 cappfile[3]="ntfsclone";
 cappsave[3]="ntfsclone -s -O ${appout}${cappfile[3]}${fiend} ${appin}";
-capprest[3]="ntfsclone -r -O ${appout}${cappfile[3]}${fiend} ${appin}";
+capprest[3]="ntfsclone -r -O ${appin} ${appout}${cappfile[3]}${fiend}";
 
 cappname[4]="fsarchiver";
 cappfile[4]="fsarchiver";
-cappsave[4]="fsarchiver savefs -x -Z 1 ${appout}${cappfile[4]}${fiend} ${appin}";
-capprest[4]="fsarchiver restfs ${appin} id=0,dest=${appout}${cappfile[4]}${fiend}";
+cappsave[4]="fsarchiver savefs -x ${appout}${cappfile[4]}${fiend} ${appin}";
+capprest[4]="fsarchiver restfs -x ${appout}${cappfile[4]}${fiend}.fsa id=0,dest=${appin}";
 
 cappname[5]="dd";
 cappfile[5]="dd";
@@ -161,8 +161,8 @@ capprest[5]="dd status=progress if=${appout}${cappfile[5]}${fiend} of=${appin} c
 
 cappname[6]="partimage";
 cappfile[6]="partimage";
-cappsave[6]="partimage -z1 -b -c -o -d save ${appin} ${appout}${cappfile[6]}${fiend}";
-capprest[6]="partimage restore ${appin} ${appout}${cappfile[6]}${fiend}";
+cappsave[6]="partimage -b -o -d save ${appin} ${appout}${cappfile[6]}${fiend}";
+capprest[6]="partimage restore ${appin} ${appout}${cappfile[6]}${fiend}.000";
 
 cappscount=6;
 }
@@ -172,25 +172,25 @@ dodisktab; local runapp;
 dobak "# Restoring ${appin} generated $(date '+%F %H:%M:%S')"; 
 
 if [ -n "$(command -v blockdev)" ]; then 
-   if [ "$(blockdev --getsize64 "${appin}")" -lt "1500000000" ]; then
-    local runapp; doask "Run all apps for the small ${appin} [Y/N]:" 'YN' 'Y' && runapps=true;
-   fi
+ if [ "$(blockdev --getsize64 "${appin}")" -lt "1500000000" ]; then
+  local runapp; doask "Run all apps for the small ${appin} [Y/N]:" 'YN' 'Y' && runapps=true;
+ fi
 fi
 
 for (( c=1; c <= cappscount; c++ )); do 
-  if [ "${runapps}" ]; then runapp=true; else doask "Run ${cappname[$c]} for ${appin} [Y/N]:" 'YN' 'Y' && runapp=true; fi
+ if [ "${runapps}" ]; then runapp=true; else doask "Run ${cappname[$c]} for ${appin} [Y/N]:" 'YN' 'Y' && runapp=true; fi
   
-  if [ "${runapp}" ]; then
-  { cappexe=$(echo "${cappsave[$c]}" | cut -d ' ' -f 1);
-   if [[ -z $(command -v "${cappexe}") ]]; then dosay "Error: ${cappexe} is missing!"; continue; unset runapp; fi;
-   dosay "Running: ${cappsave[$c]}"; 
-    if ${cappsave[$c]};
-     then dosay "Restore: ${capprest[$c]}"; dobak "${capprest[$c]}";
-     else dosay "Error: ${cappname[$c]} failed with code $?";
-    fi
-   sync; unset runapp;
-  }
-  fi
+ if [ "${runapp}" ]; then
+ { cappexe=$(echo "${cappsave[$c]}" | cut -d ' ' -f 1);
+  if [[ -z $(command -v "${cappexe}") ]]; then dosay "Error: ${cappexe} is missing!"; continue; unset runapp; fi;
+  dosay "Running: ${cappsave[$c]}"; 
+   if ${cappsave[$c]};
+   then dosay "Restore: ${capprest[$c]}"; dobak "${capprest[$c]}";
+   else dosay "Error: ${cappname[$c]} failed with code $?";
+   fi
+  sync; unset runapp;
+ }
+ fi
 done;
 
 unset runapps; du --si ./*; dosetappsio; dorun;
