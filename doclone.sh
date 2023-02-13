@@ -6,10 +6,10 @@ doask() { local doaskres; doaskres=$(doget "${1}" "${2}"); if [ "${doaskres}" ==
 dobak() { if [ ! -f "$0.bak" ]; then touch "$0.bak"; fi; if [ "$(grep -c "${1}" "$0.bak")" == "0" ]; then echo "${1}" >> "$0.bak"; fi; }
 
 doappscheck() {
-dosay "doclone v1.0 08-01-2023";
+dosay "doclone v1.0 13-02-2023";
 dosay "System check started"; local app; local askpkgsinstall;
  for app in 'echo' 'cat' 'cp' 'grep' 'cut' 'head' 'fdisk' 'sfdisk' 'sgdisk' 'date' 'dd' \
- 'partclone.ntfs' 'ntfsclone' 'partimage' 'fsarchiver' 'du' 'gzip' 'blkid' 'lsblk'; do
+ 'partclone.ntfs' 'ntfsclone' 'fsarchiver' 'du' 'gzip' 'blkid' 'lsblk'; do
   if [ -z "$(command -v ${app})" ]; then dosay "Warning: missing ${app}"; askpkgsinstall=true; fi; 
  done;
 if [[ "${askpkgsinstall}" == "true" ]]; then doask 'Run initial packages check [Y/N]:' 'Y' 'Y' &&  { dopkginstall; } fi;
@@ -19,7 +19,7 @@ dosay "System check completed";
 dopkginstall() {
 [[ ! -f '/etc/debian_version' ]] && { dosay 'Sorry only debian based distributions are supported for now'; exit 1; }
 if [ -n "$(command -v apt)" ]; then dosay 'Updating system'; apt update; fi;
- for pkg in 'gzip' 'coreutils' 'util-linux' 'gdisk' 'fdisk' 'grep' 'partclone' 'partimage' 'fsarchiver' 'ntfs-3g'; do
+ for pkg in 'gzip' 'coreutils' 'util-linux' 'gdisk' 'fdisk' 'grep' 'partclone' 'fsarchiver' 'ntfs-3g'; do
  if [ -n "$(command -v dpkg)" ]; then
   dpkg -s "${pkg}" &>>/dev/null || { 
    dosay "Warning: ${pkg} is not installed";  
@@ -32,7 +32,7 @@ if [ -n "$(command -v apt)" ]; then dosay 'Updating system'; apt update; fi;
 dosysinfo() {
 local mysyscmd; local sysfile="${0}.sys";
 if [ ! -f "${sysfile}" ]; then 
-for mysyscmd in 'uname -a' 'ip addr' 'w' 'dpkg -l gzip coreutils util-linux gdisk partclone fsarchiver ntfs-3g' \
+for mysyscmd in 'uname -a' 'lsb_release -a' 'ip addr' 'w' 'dpkg -l gzip coreutils util-linux gdisk partclone fsarchiver ntfs-3g' \
 'df --si' 'lsblk' 'blkid' 'cat /proc/partitions' 'fdisk -l' 'parted -l' 'fdisk -x' 'lspci'; do
  local ctoolexe; ctoolexe=$(echo "${mysyscmd}" | cut -d ' ' -f 1);
  if [ -n "$(command -v "${ctoolexe}")" ]; then echo "----- $mysyscmd -----" >> "${sysfile}"; ${mysyscmd} >> "${sysfile}"; fi;
@@ -128,7 +128,7 @@ if [[ -z "${diskpart}" ]]; then dosay "Error: unknown source ${diskpart}"; exit 
 if [[ -z "${partype}" ]]; then dosay "Error: unknown source type ${partype}"; exit 1; fi;
 
 dosay "Info: ${appin} identified as ${diskpart} with ${partype}";
-if [ ! "${diskpart}" == "part" ]; then dosay "Please select partition to backup"; unset appin; dosetappsio; fi;
+#if [ ! "${diskpart}" == "part" ]; then dosay "Please select partition to backup"; unset appin; dosetappsio; fi;
 
 if [[ -z "${fidel}" ]]; then readonly fidel='-'; fi;
 if [[ -z "${fiend}" ]]; then readonly fiend='.dci'; fi;
@@ -169,7 +169,7 @@ cappfile[6]="partimage";
 cappsave[6]="partimage -b -o -d save ${appin} ${appout}${cappfile[6]}${fiend}";
 capprest[6]="partimage restore ${appin} ${appout}${cappfile[6]}${fiend}.000";
 
-cappscount=6;
+cappscount=5;
 }
 
 dorun() {
