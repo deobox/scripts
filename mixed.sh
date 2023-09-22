@@ -59,7 +59,9 @@ apt install jmtpfs; mkdir -p mtpdevice; chown $USER:$USER mtpdevice; jmtpfs mtpd
 udevadm info -a -n /dev/sdx | grep serial; udevadm monitor -kup |& tee /tmp/udev.log;
 echo 'ACTION=="add", SUBSYSTEM=="block", ATTRS{serial}=="1122334455", RUN+="/usbplugged.sh" ' >> /etc/udev/rules.d/99-usb-plugged.rules; udevadm control --reload; tail -n 0 -f /var/log/syslog;
 
+x11vnc -storepasswd; x11vnc -forever -loop -alwaysshared -nolookup -localhost -listen 127.0.0.1 -no6 -noipv6 -nobell -noxdamage -noscr -nowf -cursor arrow -xkb -display :0 -usepw  &> vnc.log &
 x11vnc -storepasswd; x11vnc -forever -loop -alwaysshared -nolookup -localhost -listen 127.0.0.1 -no6 -noipv6 -nobell -noxdamage -noscr -nowf -cursor arrow -xkb -display :0 -rfbauth ~/.vnc/passwd >> ~/vnc.log 2>&1 &
+apt install tigervnc-standalone-server tigervnc-tools -- tigervncserver -localhost -autokill no -depth 16 -pixelformat rgb565
 
 apt install lxde-core pulseaudio pavucontrol lxterminal dbus dbus-x11 dbus-user-session xserver-xorg-core xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all x11-xserver-utils x11-xkb-utils x11-utils xinit;
 apt install lxqt-core lxterminal pulseaudio pavucontrol-qt dbus dbus-x11 dbus-user-session xserver-xorg-core adwaita-icon-theme gnome-icon-theme-nuovo openbox xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all x11-xserver-utils x11-xkb-utils x11-utils xinit;
