@@ -3,6 +3,8 @@ SETLOCAL
 
 GOTO :_print_
 
+::: Use Shift+F10 to run
+
 :_reg_
 echo --- Setting up registry to avoid TPM and CPU checks
 reg add HKCU\SOFTWARE\Microsoft\PCHC /v UpgradeEligibility /t REG_DWORD /d 1 /f
