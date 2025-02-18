@@ -19,7 +19,7 @@ iptables -A FORWARD -p ${proto} -s ${ipsrc} --dport ${rport} -d ${ipdst} -j ACCE
 iptables -A FORWARD -p ${proto} -s ${ipdst} --sport ${rport} -d ${ipsrc} -j ACCEPT;
 iptables -A OUTPUT -p ${proto} --sport ${lport} -d ${ipsrc} -j ACCEPT;
 iptables -A OUTPUT -p ${proto} --dport ${rport} -d ${ipdst} -j ACCEPT;
-iptables -t nat -A PREROUTING -p ${proto} --dport ${lport} -j DNAT --to ${ipdst}:${rport};
+iptables -t nat -A PREROUTING -p ${proto} -s ${ipsrc} --dport ${lport} -j DNAT --to ${ipdst}:${rport};
 iptables -t nat -A POSTROUTING -p ${proto} -s ${ipsrc} -d ${ipdst} --dport ${rport} -j SNAT --to-source ${ipmy};
 ";
 
@@ -32,7 +32,7 @@ iptables -C FORWARD -p ${proto} -s ${ipsrc} --dport ${rport} -d ${ipdst} -j ACCE
 iptables -C FORWARD -p ${proto} -s ${ipdst} --sport ${rport} -d ${ipsrc} -j ACCEPT &>/dev/null || iptables -A FORWARD -p ${proto} -s ${ipdst} --sport ${rport} -d ${ipsrc} -j ACCEPT;
 iptables -C OUTPUT -p ${proto} --sport ${lport} -d ${ipsrc} -j ACCEPT &>/dev/null || iptables -A OUTPUT -p ${proto} --sport ${lport} -d ${ipsrc} -j ACCEPT;
 iptables -C OUTPUT -p ${proto} --dport ${rport} -d ${ipdst} -j ACCEPT &>/dev/null || iptables -A OUTPUT -p ${proto} --dport ${rport} -d ${ipdst} -j ACCEPT;
-iptables -t nat -C PREROUTING -p ${proto} --dport ${lport} -j DNAT --to ${ipdst}:${rport} &>/dev/null || iptables -t nat -A PREROUTING -p ${proto} --dport ${lport} -j DNAT --to ${ipdst}:${rport};
+iptables -t nat -C PREROUTING -p ${proto} -s ${ipsrc} --dport ${lport} -j DNAT --to ${ipdst}:${rport} &>/dev/null || iptables -t nat -A PREROUTING -p ${proto} -s ${ipsrc} --dport ${lport} -j DNAT --to ${ipdst}:${rport};
 iptables -t nat -C POSTROUTING -p ${proto} -s ${ipsrc} -d ${ipdst} --dport ${rport} -j SNAT --to-source ${ipmy} &>/dev/null || iptables -t nat -A POSTROUTING -p ${proto} -s ${ipsrc} -d ${ipdst} --dport ${rport} -j SNAT --to-source ${ipmy};
 
 iptables -vnL; iptables -vnL -t nat;
